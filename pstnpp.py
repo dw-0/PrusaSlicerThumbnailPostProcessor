@@ -124,12 +124,28 @@ class ThumbnailProcessor:
             hue = pixel[0] / 255
             saturation = pixel[1] / 255
             value = pixel[2] / 255
+            alpha = 255
 
-            # replace original hue with new hue value
+            # set the alpha channel to zero for pixels whose saturation falls below a given threshold.
+            # the alpha channel cannot be taken into account in the hsv color space, 
+            # but is used further down in the rgba color space.
+            if saturation < 0.60:
+                alpha = 0
+
+            # replace original hue, saturation and value
             if hue > 0:
-                hue = hsv_from_hex[0]
+                hue = hsv_from_hex[0] # hue from color
+                saturation = hsv_from_hex[1] # saturation from color
 
-            hsv_pixel = (hue, saturation, value)
+                # thresholds for value for not having totally black or white objects
+                if hsv_from_hex[2] > 0.9:
+                    value = value*0.9
+                elif hsv_from_hex[2] < 0.1:
+                    value = value*0.1
+                else:
+                    value = value*hsv_from_hex[2] # value from color
+
+            hsv_pixel = (hue, saturation, value, alpha)
             hsv_data.append(hsv_pixel)
 
         # CONVERT HSV DATA TO RGBA DATA
@@ -142,8 +158,8 @@ class ThumbnailProcessor:
             alpha = 255
 
             # remove all background pixel
-            if rm_bg and red == green == blue:
-                red, green, blue, alpha = 255, 255, 255, 0
+            if rm_bg:
+             alpha = pixel[3]
 
             rgba_pixel = (red, green, blue, alpha)
             rgba_data.append(rgba_pixel)
